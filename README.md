@@ -40,4 +40,4 @@ You may be wondering, how is `Nocaml` able to do precise garbage collection on a
 
 ### License and source code
 
-`Nocaml` is made available under the terms of the `MIT` license. The source code for the project is hosted on `Github`, click [here](https://example.com) to access it.
+`Nocaml` is made available under the terms of the `MIT` license. The source code for the project is hosted on `Github`, click [here](https://github.com/AndreiBorac/nocaml) to access it.
