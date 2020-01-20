@@ -36,8 +36,12 @@ Future work to improve garbage collector performance in `Nocaml` is planned.
 
 ### Principle of operation
 
-You may be wondering, how is `Nocaml` able to do precise garbage collection on a C program? The trick is that the C code output by `Nocaml` manipulates only pointers, not integer values. Thus a stack location that has a value that appears to point into the heap can be assumed to actually be a pointer and subject to adjustment if the heap object it points to is relocated. The drawback to this approach is that it is only possible to manipulate integers through built-in function calls that cannot be inlined.
+You may be wondering, how is `Nocaml` able to do precise garbage collection on a C program? The trick is that the C code output by `Nocaml` manipulates only pointers, not arbitrary integer values. Thus a stack location that has a value that appears to point into the heap can be assumed to actually be a pointer and subject to adjustment if the heap object it points to is relocated. Actually, "small" integer values and pointers into static memory are also manipulated but these are thankfully not problematic. The drawback to this approach is that it is only possible to manipulate integers through builtins via function calls that cannot be inlined.
 
 ### License and source code
 
 `Nocaml` is made available under the terms of the `MIT` license. The source code for the project is hosted on `Github`, click [here](https://github.com/AndreiBorac/nocaml) to access it.
+
+### More info
+
+Check out the [FAQ](FAQ.md).
