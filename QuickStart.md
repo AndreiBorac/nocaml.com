@@ -83,7 +83,10 @@ Some additional notes that will assist the reader in understanding
 `stdlib.rb`:
 
 * Blobs will be described in another section. Do not concern yourself
-  overly with the blob-related statements at present
+  overly with the blob-related statements at present. Also, the
+  blob-related statements only have to be implemented once, in
+  `stdlib` -- a typical user of `Nocaml` will only be interested in
+  defining custom types, primordials and builtins
 
 * Notice how primordials are plainly defined as `static const
   uintptr_t` arrays in `C`
@@ -141,3 +144,35 @@ technically pure. The specific concession made in `stdlib` is to check
 that the object being mutated is freshly allocated at the front of the
 heap. This allows small, local, harmless mutations while prohibiting
 the types of mutations that can cause confusion in large programs.
+
+### A quick look at builtins
+
+Let's open `stdlib.c` and check out a builtin:
+
+```
+WOMBAT_BUILTIN static uintptr_t* wombat_builtin_blob_minus_length(WombatExternal* wombat_external WOMBAT_UNUSED, uintptr_t* wombat_context WOMBAT_UNUSED, uintptr_t* cella, uintptr_t* cellb)
+{
+  STDLIB_CHECK_TOP(cellb);
+  uintptr_t bit = (1UL << ((8*sizeof(uintptr_t))-1));
+  assert((cella[0] & bit) != 0);
+  assert((cellb[0] == WOMBAT_NATIVE_CONSTRUCTOR_Integer));
+  cellb[1] = (cella[0] - bit);
+  return cellb;
+}
+```
+
+This builtin gets the length of a blob. The `_minus_` in its name
+corresponds to a literal `-` character. `STDLIB_CHECK_TOP` is a macro
+that checks that an object is at the top/front of the heap. The first
+assert checks that the `cella` is a blob. The second checks that
+`cellb` is an `Integer`. The next line sets the payload word of the
+`Integer` object to the length of the blob.
+
+`WOMBAT_BUILTIN` is a macro that expands to an attribute informing
+`gcc` and `clang` that this function should not be subject to
+inlining.
+
+`WOMBAT_UNUSED` is a macro that expands to an attribute informing
+`gcc` and `clang` that this parameter is not necessarily used. In this
+case, `wombat_external` is used by `STDLIB_CHECK_TOP` to determine the
+heap pointer.

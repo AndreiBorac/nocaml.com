@@ -18,15 +18,15 @@ is currently somewhat slower than `OCaml` (when both are compiled to
 native code). Below is a comparison of the performance relative to
 `OCaml` on a basic non-mutating list-based `quicksort` program:
 
-![barchart](https://raw.githubusercontent.com/AndreiBorac/nocaml.com/master/graph001.png)
+![barchart](https://raw.githubusercontent.com/AndreiBorac/nocaml.com/master/graph002.png)
 
 The `OCaml` code was run with `OCAMLRUNPARAM=h=201326592,o=4000` to
 completely remove `GC` memory pressure during the
 computation. Instead, a `GC` cycle was forced at the end of the
 `quicksort` calculation to mimic `Nocaml`'s behavior of `GC`ing before
 returning to native code. For some reason, `Nocaml` exceeds `OCaml`
-performance on the first data point. While the rest of the data points
-are all slower than `OCaml`, `Nocaml` manages to stay above `70%` of
+performance on two data points. While the rest of the data points are
+all slower than `OCaml`, `Nocaml` manages to stay above `75%` of
 `OCaml` performance in all cases.
 
 Future work to improve garbage collector performance in `Nocaml` is
