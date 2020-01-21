@@ -199,15 +199,17 @@ static uintptr_t ctrmap[(sizeof(bitmap)/sizeof(uintptr_t))];
 static uintptr_t stkmap[STKMAPLEN];
 ```
 
-In this example, `memory` allocates `1.5GiB` of heap. The collector
-requires three additional areas of memory. The first is the "bitmap"
-which must have one bit per word, rounded up to an even number of
-words. The second is the "counter map", which must have the same size
-as the bitmap. The third is the "stack map" which must be large enough
-to accomodate all the pointers into the heap that are stored on the
-stack. Usually the stack map need not be very large at all, but in
-this case it is large to allow running code that has been compiled
-with `-g` (which does not eliminate tail recursion).
+In this example, `memory` allocates `1.5GiB` of heap (on 64-bit
+systems -- this is not scaled for 32-bit because we are primarily
+concerned with being able to sort a specific number of machine
+words). The collector requires three additional areas of memory. The
+first is the "bitmap" which must have one bit per word, rounded up to
+an even number of words. The second is the "counter map", which must
+have the same size as the bitmap. The third is the "stack map" which
+must be large enough to accomodate all the pointers into the heap that
+are stored on the stack. Usually the stack map need not be very large
+at all, but in this case it is large to allow running code that has
+been compiled with `-g` (which does not eliminate tail recursion).
 
 Next is the setup of a `CollectorExternal` object on the stack:
 
