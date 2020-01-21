@@ -49,3 +49,95 @@ Now here's a function that's actually recursive. `ListFini` and
 a new object. The result of `reverse-rec a b` should be `(concat
 (reverse a) b)`, except it can't be implemented that way because
 `concat` requires `reverse-rec` for its implementation.
+
+### Where types, builtins and primordials come from
+
+Types and builtins are declared in "companion" `Ruby` files like
+`stdlib.rb`. Such files can also define primordials. Such files
+consist of invocations of the following functions:
+
+* `wombat_enable_ocaml` enables `OCaml` code generation for strong
+  static typechecking. this should almost always be on, and `stdlib`
+  indeed turns it on
+
+* `wombat_register_primordial` registers a primordial object,
+  accepting its name and `C` definition
+
+* `wombat_register_builtin` registers a builtin, accepting its name
+  and arity
+
+* `wombat_register_constructor` registers a constructor, accepting its
+  name and arity
+
+* `wombat_register_constructor` registers a native constructor,
+  accepting its name and arity. Native constructors cannot be
+  destructed (`case`d) in `Nocaml`, and they are always initialized to
+  zero when created
+
+* `wombat_ocaml` registers `OCaml` code to emit during `OCaml` code
+  generation. `Nocaml` has no facility for creating corresponding
+  `OCaml` types or builtin function signatures so these must be coded
+  by hand at present
+
+Some additional notes that will assist the reader in understanding
+`stdlib.rb`:
+
+* Blobs will be described in another section. Do not concern yourself
+  overly with the blob-related statements at present
+
+* Notice how primordials are plainly defined as `static const
+  uintptr_t` arrays in `C`
+
+* There are two sets of `OCaml` code. The first set (`wombat_*`) is
+  for validating everything except the constraint that there be no
+  partial function application. The second set (`wombatx_*` validates
+  that no partial function application takes place. This requires the
+  trivial transformation of, for each function, wrapping `N` arguments
+  into a `vectorN` object. Thus every function is converted into a
+  single-argument form, and partial application becomes
+  impossible.
+
+### Understanding blobs
+
+In `Nocaml`, the memory representation of each object begins with a
+"low" tag that contains the ID of a wombat or native
+constructor. Alternatively, the tag can be a "high" tag whose high bit
+is set. In this case, the tag declares a "blob" whose length in bytes
+is given by the lower `W-1` bits of the tag (where `W` is the bit
+length of a machine word).
+
+When providing a facility to create a `Blob`, it was desired that
+`wombat` remain agnostic with respect to any defined types. Therefore,
+instead of allowing the creation of a `Blob` out of an `Integer`
+object, `wombat` allows the creation of a `Blob` out of any object
+whatsoever. The given object is passed to the special `wombat_measure`
+function to be defined by the `C` code. This function is defined by
+`stdlib` in an implementation that asserts that its argument is
+`Integer`.
+
+### Understanding allocation and mutation
+
+In `Nocaml`, allocation of `Nocaml` objects always takes place (A) by
+driver `C` code when no `Nocaml` code is executing or (B) in `Nocaml`
+code. Builtins cannot allocate. Loosening this restriction is
+technically possible but would add overhead and complexity.
+
+Thus, if a builtin were otherwise to require allocation, the
+allocation is first performed in `Nocaml` and passed into the
+builtin. For example, addition is **not**:
+
+```
+(let ((c (int-add a b))) ...)
+```
+
+but is rather:
+
+```
+(let ((c (int-add a b (Integer)))) ...)
+```
+
+The policy is to allow a limited form of mutation, making `Nocaml` not
+technically pure. The specific concession made in `stdlib` is to check
+that the object being mutated is freshly allocated at the front of the
+heap. This allows small, local, harmless mutations while prohibiting
+the types of mutations that can cause confusion in large programs.
