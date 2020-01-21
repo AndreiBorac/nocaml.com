@@ -176,3 +176,87 @@ inlining.
 `gcc` and `clang` that this parameter is not necessarily used. In this
 case, `wombat_external` is used by `STDLIB_CHECK_TOP` to determine the
 heap pointer.
+
+In no cases would `wombat_context` apply to a builtin (it is there
+because it is required to keep function signatures uniform within
+`wombat` -- keep in mind that builtins can be passed around as
+variables within `Nocaml`).
+
+### Diving into the driver
+
+The `driver.c` for the sample quicksort program illustrates how to set
+up a `Nocaml` environment, allocate `Nocaml` data structures from `C`,
+and call into `Nocaml` code from `C`.
+
+The `Nocaml` specifics start thus:
+
+```
+#define NELM (1536*1024*1024/8)
+static uintptr_t memory[NELM];
+static uintptr_t bitmap[((NELM+((8*sizeof(uintptr_t))-1))/(8*sizeof(uintptr_t)))];
+static uintptr_t ctrmap[(sizeof(bitmap)/sizeof(uintptr_t))];
+#define STKMAPLEN 32768
+static uintptr_t stkmap[STKMAPLEN];
+```
+
+In this example, `memory` allocates `1.5GiB` of heap. The collector
+requires three additional areas of memory. The first is the "bitmap"
+which must have one bit per word, rounded up to an even number of
+words. The second is the "counter map", which must have the same size
+as the bitmap. The third is the "stack map" which must be large enough
+to accomodate all the pointers into the heap that are stored on the
+stack. Usually the stack map need not be very large at all, but in
+this case it is large to allow running code that has been compiled
+with `-g` (which does not eliminate tail recursion).
+
+Next is the setup of a `CollectorExternal` object on the stack:
+
+```
+    CollectorExternal external;
+    memset((&external), 0, sizeof(external));
+    external.heap.bas = memory;
+    external.heap.end = memory + NELM;
+    external.heap.ptr = external.heap.end;
+    external.bmap.bas = bitmap;
+    external.cmap.bas = ctrmap;
+    external.smap.bas = stkmap;
+    external.smap.end = stkmap + STKMAPLEN;
+```
+
+There is nothing remarkable about the above. The next line shows how
+to turn a primordial into an ordinary `uintptr_t*` `wombat` object,
+basically by casting away `const`:
+
+```
+    uintptr_t* rest = ((uintptr_t*)(wombat_primordial_list_minus_fini));
+```
+
+Next there is a loop:
+
+```
+    for (uintptr_t i = 0; i < QSELMS; i++) {
+      uintptr_t v = ((uintptr_t)(rand()));
+      rest = wombat_constructor_3(&(external.wombat), WOMBAT_CONSTRUCTOR_ListCons, wombat_constructor_2(&(external.wombat), WOMBAT_NATIVE_CONSTRUCTOR_Integer, ((uintptr_t*)(v))), rest);
+    }
+```
+
+This constructs a list by prepending an element each iteration. There
+are two constructor invocations per iteration, one for the list link
+and one for the `Integer`.
+
+Finally, the invocation:
+
+```
+    rest = collector_invoke((&external), ((void*)(wombat_defun_main_minus_quicksort_minus_ntimes)), NULL, rest, n, NULL, NULL, NULL, NULL);
+```
+
+In `Nocaml`, invocations are always made with 6 arguments (any
+additional arguments are "don't cares"). After invocation, `Nocaml`
+will conduct a cycle of compacting garbage collection, keeping only
+the result of function invocation. All objects to be kept must be
+included in the result.
+
+After the quicksort example, there is an example using blobs. An input
+blob containing the string "hello" is replicated 100 times, resulting
+in a blob of length 500, that is converted to a string in the `C`
+code.
