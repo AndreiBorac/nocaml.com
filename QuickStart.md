@@ -3,9 +3,9 @@
 ### Purpose and Assumptions
 
 This quick start tutorial is aimed at bringing the reader up to speed
-with `Nocaml` such that the reader will be able to write `Nocaml`
-programs, write any necessary builtins in `C`, and set up a `Nocaml`
-runtime environment and invoke `Nocaml` code from `C`.
+with `Nocaml` and give the ability to: write `Nocaml`
+programs, write any necessary builtins in `C`, set up a `Nocaml`
+runtime environment, and invoke `Nocaml` code from `C`.
 
 It is assumed that the reader has at least a rudimentary grasp of the
 essentials of `OCaml`, `Ruby` and `C`.
@@ -84,16 +84,16 @@ Some additional notes that will assist the reader in understanding
 
 * Blobs will be described in another section. Do not concern yourself
   overly with the blob-related statements at present. Also, the
-  blob-related statements only have to be implemented once, in
-  `stdlib` -- a typical user of `Nocaml` will only be interested in
-  defining custom types, primordials and builtins
+  blob-related statements only have to be implemented once -- in
+  `stdlib`. A typical user of `Nocaml` will only be interested in
+  defining custom types, primordials, and builtins
 
 * Notice how primordials are plainly defined as `static const
   uintptr_t` arrays in `C`
 
 * There are two sets of `OCaml` code. The first set (`wombat_*`) is
   for validating everything except the constraint that there be no
-  partial function application. The second set (`wombatx_*` validates
+  partial function application. The second set (`wombatx_*`) validates
   that no partial function application takes place. This requires the
   trivial transformation of, for each function, wrapping `N` arguments
   into a `vectorN` object. Thus every function is converted into a
@@ -208,8 +208,8 @@ an even number of words. The second is the "counter map", which must
 have the same size as the bitmap. The third is the "stack map" which
 must be large enough to accomodate all the pointers into the heap that
 are stored on the stack. Usually the stack map need not be very large
-at all, but in this case it is large to allow running code that has
-been compiled with `-g` (which does not eliminate tail recursion).
+at all, but in this case it is large enough to allow running debug builds
+that lack tail recursion optimization.
 
 Next is the setup of a `CollectorExternal` object on the stack:
 
