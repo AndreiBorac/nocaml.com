@@ -24,7 +24,7 @@ course, written in `Nocaml`. Specifically, let's take a look at the
 ```
 
 As you can see, the syntax is vaguely reminiscent of `Lisp`. In this
-example, `True` and `False` are type constructors, while the lowercase
+example, `True` and `False` are data constructors, while the lowercase
 variants `true` and `false` happen to be "primordial" objects that are
 statically allocated outside the `Nocaml` heap. Note that `case` is
 analogous to `OCaml`'s `match ... with` construct, except it isn't as
@@ -43,7 +43,7 @@ That wasn't a very exciting function though. Let's take a look at
 ```
 
 Now here's a function that's actually recursive. `ListFini` and
-`ListCons` are type constructors. As you can see, destructing
+`ListCons` are data constructors. As you can see, destructing
 `ListCons` yields two variables, here given the names `head` and
 `tail`. In the last line, the constructor `ListCons` is used to create
 a new object. The result of `reverse-rec a b` should be `(concat
